@@ -1188,6 +1188,7 @@ export const createOrder = mutation({
     total: v.number(),
     pickupTime: v.string(),
     specialInstructions: v.optional(v.string()),
+    paymentReference: v.optional(v.string()), // Add payment reference parameter
   },
   handler: async (ctx, args) => {
     const user = await requireAuth(ctx);
@@ -1202,7 +1203,11 @@ export const createOrder = mutation({
 
     const orderId = await ctx.db.insert("orders", {
       userId: user._id,
-      ...args,
+      items: args.items,
+      total: args.total,
+      pickupTime: args.pickupTime,
+      specialInstructions: args.specialInstructions,
+      paymentReference: args.paymentReference,
       status: "pending",
       paymentStatus: "pending",
       createdAt: Date.now(),

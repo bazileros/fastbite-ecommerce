@@ -20,7 +20,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { calculateVATAmount, formatPrice } from '@/lib/utils';
+import {
+  calculateVATAmount,
+  formatPrice,
+} from '@/lib/utils';
 import {
   useEffect,
   useState,
@@ -242,11 +245,11 @@ export default function OrderConfirmationPage() {
   // Loading state
   if (isLoading || isVerifying) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center">
+      <div className="flex justify-center items-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 min-h-screen">
         <Card className="w-full max-w-md text-center">
           <CardContent className="pt-6">
-            <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4 text-primary" />
-            <h2 className="text-xl font-semibold mb-2">
+            <Loader2 className="mx-auto mb-4 w-16 h-16 text-primary animate-spin" />
+            <h2 className="mb-2 font-semibold text-xl">
               {isVerifying ? 'Verifying Payment...' : 'Loading Order...'}
             </h2>
             <p className="text-muted-foreground">
@@ -261,12 +264,12 @@ export default function OrderConfirmationPage() {
   // Error state
   if (verificationError || !orderDetails) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center">
-        <Card className="w-full max-w-md text-center border-destructive">
+      <div className="flex justify-center items-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 min-h-screen">
+        <Card className="border-destructive w-full max-w-md text-center">
           <CardContent className="pt-6">
-            <XCircle className="h-16 w-16 mx-auto mb-4 text-destructive" />
-            <h2 className="text-xl font-semibold mb-2">Payment Verification Failed</h2>
-            <p className="text-muted-foreground mb-4">
+            <XCircle className="mx-auto mb-4 w-16 h-16 text-destructive" />
+            <h2 className="mb-2 font-semibold text-xl">Payment Verification Failed</h2>
+            <p className="mb-4 text-muted-foreground">
               {verificationError || 'Unable to verify your payment. Please contact support.'}
             </p>
             <div className="flex flex-col gap-2">
@@ -284,21 +287,21 @@ export default function OrderConfirmationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto space-y-6">
+    <div className="bg-gradient-to-br from-primary/5 via-background to-secondary/5 min-h-screen">
+      <div className="mx-auto px-4 py-8 container">
+        <div className="space-y-6 mx-auto max-w-2xl">
           {/* Success Header */}
           <Card className={`border-0 ${statusInfo.bgColor}`}>
             <CardContent className="pt-6 text-center">
               <div className="flex justify-center mb-4">
-                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
+                <div className="flex justify-center items-center bg-green-100 dark:bg-green-900 rounded-full w-16 h-16">
+                  <CheckCircle className="w-8 h-8 text-green-600" />
                 </div>
               </div>
               <h1 className={`text-2xl font-bold mb-2 ${statusInfo.color}`}>
                 {statusInfo.title}
               </h1>
-              <p className="text-muted-foreground mb-4">
+              <p className="mb-4 text-muted-foreground">
                 {statusInfo.description}
               </p>
               <Badge variant="secondary" className="text-sm">
@@ -311,7 +314,7 @@ export default function OrderConfirmationPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Clock className="h-5 w-5" />
+                <Clock className="w-5 h-5" />
                 <span>Order Status</span>
               </CardTitle>
               <CardDescription>
@@ -327,7 +330,7 @@ export default function OrderConfirmationPage() {
                 <Progress value={progress} className="h-2" />
               </div>
               
-              <div className="grid grid-cols-4 gap-2 text-center text-xs">
+              <div className="gap-2 grid grid-cols-4 text-xs text-center">
                 <div className={`space-y-1 ${orderStatus === 'confirmed' ? 'text-primary' : progress >= 25 ? 'text-green-600' : 'text-muted-foreground'}`}>
                   <div className={`w-2 h-2 rounded-full mx-auto ${progress >= 25 ? 'bg-green-600' : 'bg-muted'}`} />
                   <span>Confirmed</span>
@@ -347,9 +350,9 @@ export default function OrderConfirmationPage() {
               </div>
 
               {estimatedTime > 0 && (
-                <div className="text-center p-4 bg-muted/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Estimated pickup time</p>
-                  <p className="text-lg font-bold text-primary">{estimatedTime} minutes</p>
+                <div className="bg-muted/50 p-4 rounded-lg text-center">
+                  <p className="text-muted-foreground text-sm">Estimated pickup time</p>
+                  <p className="font-bold text-primary text-lg">{estimatedTime} minutes</p>
                 </div>
               )}
             </CardContent>
@@ -359,23 +362,23 @@ export default function OrderConfirmationPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <MapPin className="h-5 w-5" />
+                <MapPin className="w-5 h-5" />
                 <span>Pickup Information</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm font-medium">Location</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-medium text-sm">Location</p>
+                    <p className="text-muted-foreground text-sm">
                       123 Fast Food Ave<br />
                       City, State 12345
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Store Hours</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-medium text-sm">Store Hours</p>
+                    <p className="text-muted-foreground text-sm">
                       Mon-Thu: 9:00 AM - 10:00 PM<br />
                       Fri-Sat: 9:00 AM - 11:00 PM<br />
                       Sunday: 10:00 AM - 9:00 PM
@@ -384,20 +387,20 @@ export default function OrderConfirmationPage() {
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm font-medium">Contact</p>
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <Phone className="h-4 w-4" />
+                    <p className="font-medium text-sm">Contact</p>
+                    <div className="flex items-center space-x-2 text-muted-foreground text-sm">
+                      <Phone className="w-4 h-4" />
                       <span>(555) 123-4567</span>
                     </div>
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <Mail className="h-4 w-4" />
+                    <div className="flex items-center space-x-2 text-muted-foreground text-sm">
+                      <Mail className="w-4 h-4" />
                       <span>hello@fastbite.com</span>
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Order Time</p>
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
+                    <p className="font-medium text-sm">Order Time</p>
+                    <div className="flex items-center space-x-2 text-muted-foreground text-sm">
+                      <Calendar className="w-4 h-4" />
                       <span>{orderTime}</span>
                     </div>
                   </div>
@@ -410,7 +413,7 @@ export default function OrderConfirmationPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Receipt className="h-5 w-5" />
+                <Receipt className="w-5 h-5" />
                 <span>Order Details</span>
               </CardTitle>
             </CardHeader>
@@ -423,28 +426,28 @@ export default function OrderConfirmationPage() {
                       <div className="flex-1">
                         <h4 className="font-medium">{item.mealName}</h4>
                         {(item.selectedToppings && item.selectedToppings.length > 0) && (
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground text-sm">
                             Toppings: {item.selectedToppings.map(t => t.name).join(', ')}
                           </p>
                         )}
                         {(item.selectedSides && item.selectedSides.length > 0) && (
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground text-sm">
                             Sides: {item.selectedSides.map(s => s.name).join(', ')}
                           </p>
                         )}
                         {(item.selectedBeverages && item.selectedBeverages.length > 0) && (
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground text-sm">
                             Drinks: {item.selectedBeverages.map(b => b.name).join(', ')}
                           </p>
                         )}
-                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                        <p className="text-muted-foreground text-sm">Qty: {item.quantity}</p>
                       </div>
                       <span className="font-medium">{formatPrice(item.totalPrice)}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-center py-4">
+                <p className="py-4 text-muted-foreground text-center">
                   Order details are being processed...
                 </p>
               )}
@@ -470,33 +473,33 @@ export default function OrderConfirmationPage() {
           </Card>
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex sm:flex-row flex-col gap-3">
             <Link href="/" className="flex-1">
               <Button variant="outline" className="w-full">
-                <Home className="h-4 w-4 mr-2" />
+                <Home className="mr-2 w-4 h-4" />
                 Back to Menu
               </Button>
             </Link>
             <Button className="flex-1">
-              <Star className="h-4 w-4 mr-2" />
+              <Star className="mr-2 w-4 h-4" />
               Rate Your Experience
             </Button>
           </div>
 
           {/* Support */}
-          <Card className="border-0 bg-muted/50">
+          <Card className="bg-muted/50 border-0">
             <CardContent className="pt-6 text-center">
-              <h3 className="font-semibold mb-2">Need Help?</h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <h3 className="mb-2 font-semibold">Need Help?</h3>
+              <p className="mb-4 text-muted-foreground text-sm">
                 If you have any questions about your order, don&apos;t hesitate to contact us.
               </p>
               <div className="flex justify-center space-x-4">
                 <Button variant="ghost" size="sm">
-                  <Phone className="h-4 w-4 mr-2" />
+                  <Phone className="mr-2 w-4 h-4" />
                   Call Store
                 </Button>
                 <Button variant="ghost" size="sm">
-                  <Mail className="h-4 w-4 mr-2" />
+                  <Mail className="mr-2 w-4 h-4" />
                   Email Support
                 </Button>
               </div>
