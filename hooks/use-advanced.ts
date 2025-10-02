@@ -213,7 +213,6 @@ export function useMealManagement() {
 
   // Actions
   const uploadImage = useAction(api.actions.uploadImage);
-  const deleteImage = useAction(api.actions.deleteImage);
 
   return {
     // Data
@@ -228,9 +227,8 @@ export function useMealManagement() {
     // Operations
     createMeal: permissions?.includes('meals:write') ? createMeal : null,
     updateMeal: permissions?.includes('meals:write') ? updateMeal : null,
-    deleteMeal: permissions?.includes('meals:write') ? deleteMeal : null,
-    uploadImage,
-    deleteImage,
+  deleteMeal: permissions?.includes('meals:write') ? deleteMeal : null,
+  uploadImage,
   };
 }
 
@@ -332,7 +330,6 @@ export function useUserManagement() {
 
   // Actions
   const sendRoleChangeNotification = useAction(api.actions.sendRoleChangeNotification);
-  const sendWelcomeEmail = useAction(api.actions.sendWelcomeEmail);
 
   return {
     // Data
@@ -346,7 +343,6 @@ export function useUserManagement() {
     updateUserRole: permissions?.includes('users:write') ? updateUserRole : null,
     updateUserProfile,
     sendRoleChangeNotification: permissions?.includes('users:write') ? sendRoleChangeNotification : null,
-    sendWelcomeEmail: permissions?.includes('users:write') ? sendWelcomeEmail : null,
   };
 }
 

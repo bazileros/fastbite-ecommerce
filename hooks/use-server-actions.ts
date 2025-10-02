@@ -11,14 +11,6 @@ export function useSendOrderConfirmation() {
   return useAction(api.actions.sendOrderConfirmation);
 }
 
-export function useSendPasswordResetEmail() {
-  return useAction(api.actions.sendPasswordResetEmail);
-}
-
-export function useSendWelcomeEmail() {
-  return useAction(api.actions.sendWelcomeEmail);
-}
-
 export function useSendRoleChangeNotification() {
   return useAction(api.actions.sendRoleChangeNotification);
 }
@@ -26,10 +18,6 @@ export function useSendRoleChangeNotification() {
 // File storage hooks
 export function useUploadImage() {
   return useAction(api.actions.uploadImage);
-}
-
-export function useDeleteImage() {
-  return useAction(api.actions.deleteImage);
 }
 
 // Payment hooks

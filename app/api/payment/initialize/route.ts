@@ -5,16 +5,24 @@ import {
 } from 'next/server';
 
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { initializePayment } from '@/lib/paystack';
+
+interface CustomizationOption {
+  id: string;
+  name: string;
+  price: number;
+}
 
 interface CartItem {
   mealId: string;
   mealName: string;
   quantity: number;
   price: number;
-  toppings?: string[];
-  sides?: string[];
-  beverages?: string[];
+  toppings?: CustomizationOption[];
+  sides?: CustomizationOption[];
+  beverages?: CustomizationOption[];
+  specialInstructions?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -43,24 +51,30 @@ export async function POST(request: NextRequest) {
 
     // Create order in Convex
     const orderId = await convex.mutation(api.mutations.createOrder, {
-      customerName: customerInfo.name,
-      customerEmail: customerInfo.email,
-      customerPhone: customerInfo.phone,
       items: items.map((item: CartItem) => ({
-        mealId: item.mealId,
-        mealName: item.mealName,
+        mealId: item.mealId as Id<'meals'>,
         quantity: item.quantity,
-        price: item.price,
-        toppings: item.toppings || [],
-        sides: item.sides || [],
-        beverages: item.beverages || [],
+        selectedToppings: item.toppings?.map((t) => ({
+          id: t.id,
+          name: t.name,
+          price: t.price,
+        })) ?? [],
+        selectedSides: item.sides?.map((side) => ({
+          id: side.id,
+          name: side.name,
+          price: side.price,
+        })) ?? [],
+        selectedBeverages: item.beverages?.map((bev) => ({
+          id: bev.id,
+          name: bev.name,
+          price: bev.price,
+        })) ?? [],
+        totalPrice: item.price,
+        specialInstructions: item.specialInstructions,
       })),
       total: amount,
       specialInstructions: customerInfo.specialInstructions || '',
       pickupTime: pickupTime || 'asap',
-      paymentMethod: 'card',
-      paymentStatus: 'pending',
-      status: 'pending',
     });
 
     // Initialize Paystack payment
