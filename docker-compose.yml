@@ -12,8 +12,21 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      # CRITICAL: These must be set in Coolify environment variables:
+      # - NEXT_PUBLIC_CONVEX_URL
+      # - CONVEX_SELF_HOSTED_URL
+      # - CONVEX_SELF_HOSTED_ADMIN_KEY
+      # - CONVEX_WEBHOOK_SIGNING_SECRET (required!)
+      # - LOGTO_ENDPOINT
+      # - LOGTO_APP_ID
+      # - LOGTO_APP_SECRET
+      # - LOGTO_COOKIE_SECRET
+      # - NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY
+      # - IMAGEKIT_PRIVATE_KEY
+      # - PAYSTACK_SECRET_KEY
+      # All other variables will be loaded from Coolify's environment config
     env_file:
-      - .env.local
+      - .env.local  # Only used for local development
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
