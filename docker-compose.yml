@@ -12,6 +12,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - HOSTNAME=0.0.0.0
       # CRITICAL: These must be set in Coolify environment variables:
       # - NEXT_PUBLIC_CONVEX_URL
       # - CONVEX_SELF_HOSTED_URL
