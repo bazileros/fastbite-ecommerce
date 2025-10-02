@@ -10,7 +10,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production --ignore-scripts
+RUN npm ci --legacy-peer-deps --only=production --ignore-scripts
 
 # ============================================
 # Stage 2: Builder
@@ -21,7 +21,7 @@ WORKDIR /app
 
 # Copy package files and install all dependencies (including dev)
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Copy source code
 COPY . .

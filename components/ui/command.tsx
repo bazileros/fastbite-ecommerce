@@ -1,155 +1,321 @@
 'use client';
 
 import * as React from 'react';
-import { type DialogProps } from '@radix-ui/react-dialog';
-import { Command as CommandPrimitive } from 'cmdk';
+
 import { Search } from 'lucide-react';
 
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { type DialogProps } from '@radix-ui/react-dialog';
 
-const Command = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive
-    ref={ref}
-    className={cn(
-      'flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground',
-      className
-    )}
-    {...props}
-  />
-));
-Command.displayName = CommandPrimitive.displayName;
+interface CommandContextValue {
+  query: string;
+  setQuery: (value: string) => void;
+}
+
+const CommandContext = React.createContext<CommandContextValue | null>(null);
+
+const useCommandContext = () => {
+  const context = React.useContext(CommandContext);
+  if (!context) {
+    throw new Error('Command components must be used within <Command>.');
+  }
+  return context;
+};
+
+interface CommandListContextValue {
+  registerItem: (id: string, visible: boolean) => void;
+  setItemVisibility: (id: string, visible: boolean) => void;
+  unregisterItem: (id: string) => void;
+  visibleCount: number;
+}
+
+const CommandListContext = React.createContext<CommandListContextValue | null>(null);
+
+const useCommandListContext = () => React.useContext(CommandListContext);
+
+type CommandProps = React.HTMLAttributes<HTMLDivElement> & {
+  onQueryChange?: (value: string) => void;
+};
+
+const Command = React.forwardRef<HTMLDivElement, CommandProps>(
+  ({ className, children, onQueryChange, ...props }, ref) => {
+    const [query, setQuery] = React.useState('');
+
+    const handleSetQuery = React.useCallback(
+      (value: string) => {
+        setQuery(value);
+        onQueryChange?.(value);
+      },
+      [onQueryChange]
+    );
+
+    return (
+      <CommandContext.Provider value={{ query, setQuery: handleSetQuery }}>
+        <div
+          ref={ref}
+          className={cn(
+            'flex flex-col bg-popover rounded-md w-full h-full overflow-hidden text-popover-foreground',
+            className
+          )}
+          {...props}
+        >
+          {children}
+        </div>
+      </CommandContext.Provider>
+    );
+  }
+);
+Command.displayName = 'Command';
 
 interface CommandDialogProps extends DialogProps {}
 
-const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
-  return (
-    <Dialog {...props}>
-      <DialogContent className="overflow-hidden p-0 shadow-lg">
-        <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
-          {children}
-        </Command>
-      </DialogContent>
-    </Dialog>
-  );
-};
+const CommandDialog = ({ children, ...props }: CommandDialogProps) => (
+  <Dialog {...props}>
+    <DialogContent className="shadow-lg p-0 overflow-hidden">
+      <Command>{children}</Command>
+    </DialogContent>
+  </Dialog>
+);
 
-const CommandInput = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Input>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
->(({ className, ...props }, ref) => (
-  <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
-    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-    <CommandPrimitive.Input
+type CommandInputProps = React.InputHTMLAttributes<HTMLInputElement>;
+
+const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps>(
+  ({ className, onChange, ...props }, ref) => {
+    const { setQuery } = useCommandContext();
+
+    const handleChange = React.useCallback<
+      NonNullable<CommandInputProps['onChange']>
+    >(
+      (event) => {
+        setQuery(event.target.value);
+        onChange?.(event);
+      },
+      [onChange, setQuery]
+    );
+
+    return (
+      <div className="flex items-center px-3 border-b">
+        <Search className="opacity-50 mr-2 w-4 h-4 shrink-0" />
+        <input
+          ref={ref}
+          className={cn(
+            'flex bg-transparent disabled:opacity-50 py-3 rounded-md outline-none w-full h-11 placeholder:text-muted-foreground text-sm disabled:cursor-not-allowed',
+            className
+          )}
+          onChange={handleChange}
+          {...props}
+        />
+      </div>
+    );
+  }
+);
+CommandInput.displayName = 'CommandInput';
+
+type CommandListProps = React.HTMLAttributes<HTMLDivElement>;
+
+const CommandList = React.forwardRef<HTMLDivElement, CommandListProps>(
+  ({ className, children, ...props }, ref) => {
+    const [visibilityMap, setVisibilityMap] = React.useState<Record<string, boolean>>({});
+
+    const registerItem = React.useCallback<CommandListContextValue['registerItem']>((id, visible) => {
+      setVisibilityMap((prev) => {
+        if (prev[id] === visible) return prev;
+        return { ...prev, [id]: visible };
+      });
+    }, []);
+
+    const setItemVisibility = React.useCallback<CommandListContextValue['setItemVisibility']>((id, visible) => {
+      setVisibilityMap((prev) => {
+        if (prev[id] === visible) return prev;
+        return { ...prev, [id]: visible };
+      });
+    }, []);
+
+    const unregisterItem = React.useCallback<CommandListContextValue['unregisterItem']>((id) => {
+      setVisibilityMap((prev) => {
+        if (!(id in prev)) return prev;
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    }, []);
+
+    const visibleCount = React.useMemo(
+      () => Object.values(visibilityMap).filter(Boolean).length,
+      [visibilityMap]
+    );
+
+    const contextValue = React.useMemo<CommandListContextValue>(
+      () => ({ registerItem, setItemVisibility, unregisterItem, visibleCount }),
+      [registerItem, setItemVisibility, unregisterItem, visibleCount]
+    );
+
+    return (
+      <CommandListContext.Provider value={contextValue}>
+        <div
+          ref={ref}
+          className={cn('py-2 max-h-[300px] overflow-x-hidden overflow-y-auto', className)}
+          {...props}
+        >
+          {children}
+        </div>
+      </CommandListContext.Provider>
+    );
+  }
+);
+CommandList.displayName = 'CommandList';
+
+type CommandEmptyProps = React.HTMLAttributes<HTMLDivElement>;
+
+const CommandEmpty = React.forwardRef<HTMLDivElement, CommandEmptyProps>(
+  ({ className, children, ...props }, ref) => {
+    const listContext = useCommandListContext();
+
+    if (listContext && listContext.visibleCount > 0) {
+      return null;
+    }
+
+    return (
+      <div
+        ref={ref}
+        className={cn('py-6 text-muted-foreground text-sm text-center', className)}
+        {...props}
+      >
+        {children}
+      </div>
+    );
+  }
+);
+CommandEmpty.displayName = 'CommandEmpty';
+
+interface CommandGroupProps extends React.HTMLAttributes<HTMLDivElement> {
+  heading?: React.ReactNode;
+}
+
+const CommandGroup = React.forwardRef<HTMLDivElement, CommandGroupProps>(
+  ({ className, heading, children, ...props }, ref) => (
+    <div
       ref={ref}
-      className={cn(
-        'flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
-        className
-      )}
+      className={cn('space-y-1 p-1 text-foreground', className)}
+      {...props}
+    >
+      {heading ? (
+        <p className="px-2 py-1.5 font-medium text-muted-foreground text-xs">
+          {heading}
+        </p>
+      ) : null}
+      <div className="space-y-1">{children}</div>
+    </div>
+  )
+);
+CommandGroup.displayName = 'CommandGroup';
+
+type CommandSeparatorProps = React.HTMLAttributes<HTMLDivElement>;
+
+const CommandSeparator = React.forwardRef<HTMLDivElement, CommandSeparatorProps>(
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn('my-1 bg-border h-px', className)}
       {...props}
     />
-  </div>
-));
+  )
+);
+CommandSeparator.displayName = 'CommandSeparator';
 
-CommandInput.displayName = CommandPrimitive.Input.displayName;
+interface CommandItemProps
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onSelect'> {
+  value?: string;
+  keywords?: string[];
+  onSelect?: (value: string) => void;
+}
 
-const CommandList = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.List
-    ref={ref}
-    className={cn('max-h-[300px] overflow-y-auto overflow-x-hidden', className)}
-    {...props}
-  />
-));
+const CommandItem = React.forwardRef<HTMLButtonElement, CommandItemProps>(
+  ({ className, value, keywords = [], children, onSelect, onClick, ...props }, ref) => {
+    const { query } = useCommandContext();
+    const listContext = useCommandListContext();
+    const id = React.useId();
 
-CommandList.displayName = CommandPrimitive.List.displayName;
+    const stringContent = React.useMemo(() => {
+      if (value) return value;
+      if (typeof children === 'string') return children;
+      return React.Children.toArray(children)
+        .filter((child) => typeof child === 'string')
+        .join(' ');
+    }, [children, value]);
 
-const CommandEmpty = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Empty>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
->((props, ref) => (
-  <CommandPrimitive.Empty
-    ref={ref}
-    className="py-6 text-center text-sm"
-    {...props}
-  />
-));
+    const haystack = React.useMemo(() => {
+      const base = stringContent ?? '';
+      return [base, ...keywords].join(' ').toLowerCase();
+    }, [keywords, stringContent]);
 
-CommandEmpty.displayName = CommandPrimitive.Empty.displayName;
+    const needle = query.trim().toLowerCase();
+    const isVisible = needle.length === 0 || haystack.includes(needle);
 
-const CommandGroup = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Group>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.Group
-    ref={ref}
-    className={cn(
-      'overflow-hidden p-1 text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground',
-      className
-    )}
-    {...props}
-  />
-));
+    React.useEffect(() => {
+      if (!listContext) return;
+      listContext.registerItem(id, isVisible);
+      return () => listContext.unregisterItem(id);
+    }, [id, isVisible, listContext]);
 
-CommandGroup.displayName = CommandPrimitive.Group.displayName;
+    React.useEffect(() => {
+      if (!listContext) return;
+      listContext.setItemVisibility(id, isVisible);
+    }, [id, isVisible, listContext]);
 
-const CommandSeparator = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Separator>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Separator>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.Separator
-    ref={ref}
-    className={cn('-mx-1 h-px bg-border', className)}
-    {...props}
-  />
-));
-CommandSeparator.displayName = CommandPrimitive.Separator.displayName;
+    if (!isVisible) {
+      return null;
+    }
 
-const CommandItem = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.Item
-    ref={ref}
-    className={cn(
-      "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none data-[selected='true']:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-50",
-      className
-    )}
-    {...props}
-  />
-));
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      onClick?.(event);
+      if (!event.defaultPrevented) {
+        onSelect?.(stringContent ?? '');
+      }
+    };
 
-CommandItem.displayName = CommandPrimitive.Item.displayName;
+    return (
+      <button
+        type="button"
+        ref={ref}
+        data-value={stringContent ?? ''}
+        className={cn(
+          'relative flex items-center hover:bg-accent focus:bg-accent px-2 py-1.5 rounded-sm outline-none w-full text-sm text-left transition hover:text-accent-foreground focus:text-accent-foreground cursor-pointer select-none',
+          className
+        )}
+        onClick={handleClick}
+        {...props}
+      >
+        {children}
+      </button>
+    );
+  }
+);
+CommandItem.displayName = 'CommandItem';
 
 const CommandShortcut = ({
   className,
   ...props
-}: React.HTMLAttributes<HTMLSpanElement>) => {
-  return (
-    <span
-      className={cn(
-        'ml-auto text-xs tracking-widest text-muted-foreground',
-        className
-      )}
-      {...props}
-    />
-  );
-};
+}: React.HTMLAttributes<HTMLSpanElement>) => (
+  <span
+    className={cn('ml-auto text-muted-foreground text-xs tracking-widest', className)}
+    {...props}
+  />
+);
 CommandShortcut.displayName = 'CommandShortcut';
 
 export {
   Command,
   CommandDialog,
-  CommandInput,
-  CommandList,
   CommandEmpty,
   CommandGroup,
+  CommandInput,
   CommandItem,
-  CommandShortcut,
+  CommandList,
   CommandSeparator,
+  CommandShortcut,
 };
