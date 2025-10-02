@@ -28,7 +28,8 @@ COPY . .
 
 # Set environment for build
 ENV NEXT_TELEMETRY_DISABLED 1
-ENV NODE_ENV production
+# Don't set NODE_ENV=production during build as it skips devDependencies needed for type-checking
+# NODE_ENV will be set to production in the runner stage
 
 # Build the application
 RUN npm run build
