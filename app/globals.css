@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Open+Sans:wght@400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 45 33% 96%;
+  --foreground: 0 0% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+  --primary: 14 100% 60%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 45 20% 90%;
+  --secondary-foreground: 0 0% 10%;
+  --muted: 45 20% 90%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 45 20% 90%;
+  --accent-foreground: 0 0% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 45 15% 85%;
+  --input: 45 15% 85%;
+  --ring: 14 100% 60%;
+  --radius: 0.75rem;
+  --chart-1: 12 76% 61%;
+  --chart-2: 173 58% 39%;
+  --chart-3: 197 37% 24%;
+  --chart-4: 43 74% 66%;
+  --chart-5: 27 87% 67%;
+}
+
+.dark {
+  --background: 0 0% 10%;
+  --foreground: 45 33% 96%;
+  --card: 0 0% 18%;
+  --card-foreground: 45 33% 96%;
+  --popover: 0 0% 18%;
+  --popover-foreground: 45 33% 96%;
+  --primary: 14 100% 60%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 0 0% 15%;
+  --secondary-foreground: 45 33% 96%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 65%;
+  --accent: 0 0% 15%;
+  --accent-foreground: 45 33% 96%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 20%;
+  --input: 0 0% 20%;
+  --ring: 14 100% 60%;
+  --chart-1: 220 70% 50%;
+  --chart-2: 160 60% 45%;
+  --chart-3: 30 80% 55%;
+  --chart-4: 280 65% 60%;
+  --chart-5: 340 75% 55%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background font-body text-foreground;
+    font-family: var(--font-cakecafe), 'Open Sans', sans-serif;
+  }
+}
+
+@layer components {
+  .gradient-bg {
+    @apply bg-gradient-to-br from-primary/10 via-transparent to-secondary/10;
+  }
+  
+  .glass-effect {
+    @apply backdrop-blur-sm bg-background/80 border border-border/50;
+  }
+  
+  .hover-lift {
+    @apply hover:shadow-lg hover:scale-[1.02] transition-all duration-300;
+  }
+  
+  .animation-slide-up {
+    @apply slide-in-from-bottom-4 animate-in duration-500 fade-in-0;
+  }
+  
+  .animation-fade-in {
+    @apply animate-in duration-700 fade-in-0;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-secondary;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-primary/60 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary;
+}

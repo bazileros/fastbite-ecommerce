@@ -1,0 +1,11 @@
+{
+  "node": {
+    "polyfill": true
+  },
+  "generateCommonJSApi": false,
+  "functions": "convex/",
+  "generateCommonJS": false,
+  "bundler": {
+    "platform": "node"
+  }
+}

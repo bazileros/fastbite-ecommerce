@@ -1,0 +1,19 @@
+# Robots.txt for FastBite
+# Allow all web crawlers to access the site
+
+User-agent: *
+Allow: /
+
+# Block access to admin and API routes
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+
+# Allow access to sitemap
+Allow: /sitemap.xml
+
+# Crawl delay (optional)
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://shop.surestrat.xyz/sitemap.xml
