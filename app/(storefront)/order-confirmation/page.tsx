@@ -5,11 +5,13 @@ import {
   CheckCircle,
   Clock,
   Home,
+  Loader2,
   Mail,
   MapPin,
   Phone,
   Receipt,
   Star,
+  XCircle,
 } from 'lucide-react';
 import {
   Card,
@@ -29,14 +31,148 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
+import { useSearchParams } from 'next/navigation';
+
+interface OrderItem {
+  mealName: string;
+  quantity: number;
+  totalPrice: number;
+  selectedToppings?: Array<{ name: string }>;
+  selectedSides?: Array<{ name: string }>;
+  selectedBeverages?: Array<{ name: string }>;
+}
+
+interface OrderDetails {
+  _id: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  total: number;
+  items: OrderItem[];
+  createdAt: number;
+  pickupTime: string;
+  specialInstructions?: string;
+}
 
 export default function OrderConfirmationPage() {
+  const searchParams = useSearchParams();
+  const reference = searchParams.get('reference');
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [orderStatus, setOrderStatus] = useState('confirmed');
   const [progress, setProgress] = useState(25);
   const [estimatedTime, setEstimatedTime] = useState(18);
 
+  // Verify payment and fetch order details
+  useEffect(() => {
+    const verifyPaymentAndFetchOrder = async () => {
+      if (!reference) {
+        setVerificationError('No payment reference found');
+        setIsVerifying(false);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Verify payment with Paystack
+        const verifyResponse = await fetch('/api/payment/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reference }),
+        });
+
+        if (!verifyResponse.ok) {
+          throw new Error('Failed to verify payment');
+        }
+
+        const verificationData = await verifyResponse.json();
+
+        if (!verificationData.success) {
+          throw new Error('Payment verification failed');
+        }
+
+        // Payment verified successfully
+        toast.success('Payment verified successfully!');
+        setIsVerifying(false);
+
+        // Fetch actual order details from Convex
+        try {
+          const orderResponse = await fetch('/api/orders/by-reference', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reference }),
+          });
+
+          if (orderResponse.ok) {
+            const order = await orderResponse.json();
+            setOrderDetails({
+              _id: order._id,
+              orderNumber: 'FB' + order._id.substring(0, 6).toUpperCase(),
+              status: order.status,
+              paymentStatus: order.paymentStatus,
+              total: order.total,
+              items: order.items.map((item: OrderItem & { meal?: { name: string } }) => ({
+                mealName: item.meal?.name || 'Unknown Item',
+                quantity: item.quantity,
+                totalPrice: item.totalPrice,
+                selectedToppings: item.selectedToppings,
+                selectedSides: item.selectedSides,
+                selectedBeverages: item.selectedBeverages,
+              })),
+              createdAt: order.createdAt,
+              pickupTime: order.pickupTime,
+              specialInstructions: order.specialInstructions,
+            });
+          } else {
+            // Fallback if order fetch fails
+            console.warn('Failed to fetch order details, using basic info');
+            setOrderDetails({
+              _id: verificationData.data.orderId || 'unknown',
+              orderNumber: 'FB' + reference.substring(0, 6).toUpperCase(),
+              status: 'confirmed',
+              paymentStatus: 'paid',
+              total: verificationData.data.amount,
+              items: [],
+              createdAt: Date.now(),
+              pickupTime: 'asap',
+            });
+          }
+        } catch (orderError) {
+          console.warn('Error fetching order details:', orderError);
+          // Use fallback data
+          setOrderDetails({
+            _id: verificationData.data.orderId || 'unknown',
+            orderNumber: 'FB' + reference.substring(0, 6).toUpperCase(),
+            status: 'confirmed',
+            paymentStatus: 'paid',
+            total: verificationData.data.amount,
+            items: [],
+            createdAt: Date.now(),
+            pickupTime: 'asap',
+          });
+        }
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Payment verification error:', error);
+        setVerificationError(error instanceof Error ? error.message : 'Unknown error');
+        toast.error('Failed to verify payment');
+        setIsVerifying(false);
+        setIsLoading(false);
+      }
+    };
+
+    verifyPaymentAndFetchOrder();
+  }, [reference]);
+
   // Simulate order progress
   useEffect(() => {
+    if (!orderDetails) return;
+
     const interval = setInterval(() => {
       setEstimatedTime(prev => Math.max(0, prev - 1));
       
@@ -56,10 +192,10 @@ export default function OrderConfirmationPage() {
     }, 60000); // Update every minute
 
     return () => clearInterval(interval);
-  }, [estimatedTime]);
+  }, [estimatedTime, orderDetails]);
 
-  const orderNumber = 'FB' + Math.random().toString(36).substr(2, 6).toUpperCase();
-  const orderTime = new Date().toLocaleString();
+  const orderNumber = orderDetails?.orderNumber || 'Loading...';
+  const orderTime = orderDetails ? new Date(orderDetails.createdAt).toLocaleString() : '';
 
   const getStatusInfo = () => {
     switch (orderStatus) {
@@ -102,6 +238,50 @@ export default function OrderConfirmationPage() {
   };
 
   const statusInfo = getStatusInfo();
+
+  // Loading state
+  if (isLoading || isVerifying) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="pt-6">
+            <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4 text-primary" />
+            <h2 className="text-xl font-semibold mb-2">
+              {isVerifying ? 'Verifying Payment...' : 'Loading Order...'}
+            </h2>
+            <p className="text-muted-foreground">
+              Please wait while we confirm your order
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Error state
+  if (verificationError || !orderDetails) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center">
+        <Card className="w-full max-w-md text-center border-destructive">
+          <CardContent className="pt-6">
+            <XCircle className="h-16 w-16 mx-auto mb-4 text-destructive" />
+            <h2 className="text-xl font-semibold mb-2">Payment Verification Failed</h2>
+            <p className="text-muted-foreground mb-4">
+              {verificationError || 'Unable to verify your payment. Please contact support.'}
+            </p>
+            <div className="flex flex-col gap-2">
+              <Link href="/orders">
+                <Button variant="outline" className="w-full">View My Orders</Button>
+              </Link>
+              <Link href="/">
+                <Button className="w-full">Back to Home</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
@@ -235,45 +415,55 @@ export default function OrderConfirmationPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Mock order items */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h4 className="font-medium">The Ultimate Beast Burger</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Extra Bacon, Avocado, Jalapeños + Truffle Fries + Craft Cola
-                    </p>
-                    <p className="text-sm text-muted-foreground">Qty: 1</p>
-                  </div>
-                  <span className="font-medium">{formatPrice(22.47)}</span>
+              {/* Order items */}
+              {orderDetails.items.length > 0 ? (
+                <div className="space-y-3">
+                  {orderDetails.items.map((item, index) => (
+                    <div key={`${item.mealName}-${index}`} className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h4 className="font-medium">{item.mealName}</h4>
+                        {(item.selectedToppings && item.selectedToppings.length > 0) && (
+                          <p className="text-sm text-muted-foreground">
+                            Toppings: {item.selectedToppings.map(t => t.name).join(', ')}
+                          </p>
+                        )}
+                        {(item.selectedSides && item.selectedSides.length > 0) && (
+                          <p className="text-sm text-muted-foreground">
+                            Sides: {item.selectedSides.map(s => s.name).join(', ')}
+                          </p>
+                        )}
+                        {(item.selectedBeverages && item.selectedBeverages.length > 0) && (
+                          <p className="text-sm text-muted-foreground">
+                            Drinks: {item.selectedBeverages.map(b => b.name).join(', ')}
+                          </p>
+                        )}
+                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                      </div>
+                      <span className="font-medium">{formatPrice(item.totalPrice)}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h4 className="font-medium">Spicy Buffalo Chicken</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Extra Buffalo Sauce + Loaded Fries
-                    </p>
-                    <p className="text-sm text-muted-foreground">Qty: 1</p>
-                  </div>
-                  <span className="font-medium">{formatPrice(18.48)}</span>
-                </div>
-              </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  Order details are being processed...
+                </p>
+              )}
 
               <Separator />
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal (excl. VAT)</span>
-                  <span>{formatPrice(40.95)}</span>
+                  <span>{formatPrice(orderDetails.total)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>VAT (15%)</span>
-                  <span>{formatPrice(calculateVATAmount(40.95))}</span>
+                  <span>{formatPrice(calculateVATAmount(orderDetails.total))}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-bold">
                   <span>Total (incl. VAT)</span>
-                  <span className="text-primary">{formatPrice(40.95 + calculateVATAmount(40.95))}</span>
+                  <span className="text-primary">{formatPrice(orderDetails.total + calculateVATAmount(orderDetails.total))}</span>
                 </div>
               </div>
             </CardContent>

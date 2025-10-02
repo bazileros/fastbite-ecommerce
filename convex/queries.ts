@@ -1,10 +1,9 @@
-import { v } from 'convex/values';
-
-import { query } from './_generated/server';
+import { getCurrentUserWithRoles } from './users';
+import { getPermissionsFromClaims } from './query_wrappers';
 import { getPrimaryRole } from './auth_utils';
 import { hasPermissionFromJWT } from './permissions';
-import { getPermissionsFromClaims } from './query_wrappers';
-import { getCurrentUserWithRoles } from './users';
+import { query } from './_generated/server';
+import { v } from 'convex/values';
 
 // =============================================================================
 // MEAL QUERIES
@@ -532,6 +531,53 @@ export const getOrder = query({
     return {
       ...order,
       items: itemsWithDetails,
+    };
+  },
+});
+
+// Get order by payment reference (for order confirmation after payment)
+export const getOrderByPaymentReference = query({
+  args: {
+    reference: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Find order by payment reference
+    const order = await ctx.db
+      .query("orders")
+      .withIndex("by_payment_reference", (q) => q.eq("paymentReference", args.reference))
+      .first();
+
+    if (!order) {
+      return null;
+    }
+
+    // Get meal details for each item
+    const itemsWithDetails = await Promise.all(
+      order.items.map(async (item) => {
+        const meal = await ctx.db.get(item.mealId);
+        return {
+          ...item,
+          meal: meal ? {
+            id: meal._id,
+            name: meal.name,
+            image: meal.image,
+            price: meal.price,
+            category: meal.category,
+          } : null,
+        };
+      })
+    );
+
+    // Get user details
+    const user = await ctx.db.get(order.userId);
+
+    return {
+      ...order,
+      items: itemsWithDetails,
+      user: user ? {
+        name: user.name,
+        email: user.email,
+      } : null,
     };
   },
 });

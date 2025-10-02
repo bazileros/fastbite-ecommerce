@@ -1,15 +1,15 @@
-import { v } from 'convex/values';
-
-import type { Id } from './_generated/dataModel';
-import type { MutationCtx } from './_generated/server';
-import { mutation } from './_generated/server';
 import {
   logAction,
   requireAuth,
   requirePermission,
 } from './auth';
-import { hasPermissionFromJWT } from './permissions';
+
+import type { Id } from './_generated/dataModel';
+import type { MutationCtx } from './_generated/server';
 import { getPermissionsFromClaims } from './query_wrappers';
+import { hasPermissionFromJWT } from './permissions';
+import { mutation } from './_generated/server';
+import { v } from 'convex/values';
 
 // Helper function to get or create user from JWT claims
 async function getOrCreateUserFromClaims(ctx: MutationCtx, claims: { sub: string; email?: string; name?: string; roles?: string[]; picture?: string }) {
@@ -1344,12 +1344,12 @@ export const updateOrderPaymentStatus = mutation({
 
     // Add transaction ID if provided
     if (args.transactionId) {
-      updateData.paymentMethod = args.transactionId;
+      updateData.transactionId = args.transactionId;
     }
 
     // Handle payment status specific updates
     if (args.status === "paid") {
-      updateData.paymentMethod = args.transactionId || order.paymentMethod;
+      updateData.transactionId = args.transactionId || order.transactionId;
     } else if (args.status === "refunded") {
       updateData.refundedAt = Date.now();
       if (args.claims) {

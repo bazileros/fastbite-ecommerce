@@ -45,9 +45,9 @@ export async function POST(request: NextRequest) {
 				const orderId = event.data.metadata?.orderId;
 
 				if (orderId && reference) {
-					console.log(`Processing successful payment for order ${orderId}`);
+					console.log(`Processing successful payment for order ${orderId}, reference: ${reference}`);
 
-					// Update order payment status
+					// Update order payment status with transaction ID
 					await convex.mutation(api.mutations.updateOrderPaymentStatus, {
 						orderId,
 						status: "paid",
@@ -60,9 +60,9 @@ export async function POST(request: NextRequest) {
 						status: "confirmed",
 					});
 
-					console.log(`Successfully processed payment for order ${orderId}`);
+					console.log(`✅ Successfully processed payment for order ${orderId}`);
 				} else {
-					console.warn("Missing orderId or reference in successful charge event");
+					console.warn("⚠️ Missing orderId or reference in successful charge event");
 				}
 				break;
 			}

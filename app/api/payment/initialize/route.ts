@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
       total: amount,
       specialInstructions: customerInfo.specialInstructions || '',
       pickupTime: pickupTime || 'asap',
+      paymentReference: reference, // Store payment reference for lookup
     });
 
     // Initialize Paystack payment

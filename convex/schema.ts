@@ -2,6 +2,7 @@ import {
   defineSchema,
   defineTable,
 } from 'convex/server';
+
 import { v } from 'convex/values';
 
 export default defineSchema({
@@ -177,6 +178,8 @@ export default defineSchema({
       v.literal("refunded")
     ),
     paymentMethod: v.optional(v.string()),
+    paymentReference: v.optional(v.string()), // Paystack payment reference
+    transactionId: v.optional(v.string()), // Paystack transaction ID
     pickupTime: v.string(),
     specialInstructions: v.optional(v.string()),
     // Staff assignments
@@ -200,7 +203,8 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_payment_status", ["paymentStatus"])
     .index("by_created_at", ["createdAt"])
-    .index("by_assigned_staff", ["assignedStaff"]),
+    .index("by_assigned_staff", ["assignedStaff"])
+    .index("by_payment_reference", ["paymentReference"]),
 
   // Cart sessions for guest users
   cartSessions: defineTable({
